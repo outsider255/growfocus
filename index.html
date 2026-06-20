@@ -265,7 +265,7 @@ class Component extends DCLogic {
       if (key === 'cycle' && p.completed > v) patch.completed = v;
       try { localStorage.setItem('terrarium_settings', JSON.stringify(settings)); } catch (e) {}
       return patch;
-    }, () => this.updateTitle());
+    }, () => { this.updateTitle(); this.persistTimer(); });
   }
 
   toggleSetting(key) {
@@ -308,6 +308,13 @@ class Component extends DCLogic {
     });
   }
 
+  persistTimer() {
+    try {
+      const s = this.state;
+      localStorage.setItem('terrarium_timer', JSON.stringify({ mode: s.mode, completed: s.completed, remaining: s.remaining }));
+    } catch (e) {}
+  }
+
   componentDidMount() {
     try {
       const i = localStorage.getItem('terrarium_intention');
@@ -325,6 +332,15 @@ class Component extends DCLogic {
           const settings = Object.assign({}, p.settings, parsed);
           return { settings, remaining: p.running ? p.remaining : this.durOf(settings, p.mode) };
         }, () => this.updateTitle());
+      }
+    } catch (e) {}
+    try {
+      const raw = localStorage.getItem('terrarium_timer');
+      if (raw) {
+        const t = JSON.parse(raw);
+        if (t && t.mode && typeof t.remaining === 'number') {
+          this.setState({ mode: t.mode, completed: t.completed || 0, remaining: t.remaining, running: false });
+        }
       }
     } catch (e) {}
     this.ensureTicking();
@@ -391,7 +407,7 @@ class Component extends DCLogic {
         }
       }
       return next;
-    }, () => this.updateTitle());
+    }, () => { this.updateTitle(); this.persistTimer(); });
   }
 
   parseMusicUrl() {
@@ -572,7 +588,7 @@ class Component extends DCLogic {
       toggleTimer: (e) => { e && e.stopPropagation(); if (!this.state.running) this.chime && (this._ac && this._ac.state === 'suspended' && this._ac.resume()); this.setState((p) => ({ running: !p.running }), () => this.updateTitle()); },
       resetTimer: (e) => {
         e && e.stopPropagation();
-        this.setState((p) => ({ running: false, remaining: this.durOf(p.settings, p.mode) }), () => this.updateTitle());
+        this.setState((p) => ({ running: false, remaining: this.durOf(p.settings, p.mode) }), () => { this.updateTitle(); this.persistTimer(); });
       },
       skipPhase: (e) => {
         e && e.stopPropagation();
@@ -590,7 +606,7 @@ class Component extends DCLogic {
             if (s.completed >= cycle) next.completed = 0;
           }
           return next;
-        }, () => this.updateTitle());
+        }, () => { this.updateTitle(); this.persistTimer(); });
       },
 
       toggleScratch: (e) => { e && e.stopPropagation(); this.setState((p) => ({ scratchOpen: !p.scratchOpen })); },
