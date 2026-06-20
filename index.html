@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; height:100%; overflow:hidden; background:#0a0c07; }
+    ::selection{ background:rgba(169,201,127,.35); }
+    textarea::placeholder{ color:rgba(238,232,216,.34); }
+    textarea:focus{ outline:none; }
+    @keyframes breathe { 0%,100%{ transform:scale(1.03) translate(0,0);} 50%{ transform:scale(1.06) translate(-0.6%,-0.4%);} }
+    @keyframes mglow { 0%,100%{ opacity:.4; transform:scale(.9);} 50%{ opacity:.95; transform:scale(1.12);} }
+    @keyframes eye { 0%,100%{ opacity:.55;} 50%{ opacity:1;} }
+    @keyframes spore { 0%{ transform:translate(0,0); opacity:0;} 12%{ opacity:.8;} 88%{ opacity:.7;} 100%{ transform:translate(var(--dx,18px),-140px); opacity:0;} }
+    @keyframes hintfade { 0%,100%{ opacity:.32;} 50%{ opacity:.7;} }
+    @keyframes eq { 0%,100%{ transform:scaleY(.35);} 50%{ transform:scaleY(1);} }
+  </style>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</helmet>
+
+<div onClick="{{ onSceneClick }}" style="position:fixed; inset:0; overflow:hidden; background:#0a0c07; font-family:'Nunito Sans',sans-serif; cursor:default;">
+
+  <!-- ===== the living terrarium (illustrated home scene) ===== -->
+  <div style="position:absolute; inset:0; overflow:hidden;">
+    <div style="position:absolute; inset:0; animation:breathe 26s ease-in-out infinite; transform-origin:42% 58%;">
+      <img src="assets/terrarium.jpg" alt="terrarium" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
+    </div>
+    <div style="position:absolute; left:11%; top:80%; width:120px; height:120px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,#7fe0d0,transparent 68%); filter:blur(8px); animation:mglow 6s ease-in-out infinite;"></div>
+    <div style="position:absolute; left:5%; top:60%; width:80px; height:80px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,#8fd6ff,transparent 68%); filter:blur(8px); animation:mglow 7.5s ease-in-out infinite 1.2s;"></div>
+    <div style="position:absolute; left:39.5%; top:55%; width:46px; height:26px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,#a9f0e2,transparent 70%); filter:blur(5px); animation:eye 4.5s ease-in-out infinite;"></div>
+  </div>
+
+  <!-- ===== shared atmosphere ===== -->
+  <div style="position:absolute; inset:0; overflow:hidden; pointer-events:none;">
+    <!-- vignette / dim -->
+    <div style="position:absolute; inset:0; background:radial-gradient(125% 95% at 38% 46%, rgba(8,12,6,.10), rgba(6,9,4,.55) 72%, rgba(3,5,2,.86));"></div>
+    <!-- floating spores / fireflies -->
+    <div style="position:absolute; left:30%; top:78%; width:4px; height:4px; border-radius:50%; background:#d8f3c8; box-shadow:0 0 8px 2px rgba(216,243,200,.7); --dx:24px; animation:spore 11s ease-in-out infinite;"></div>
+    <div style="position:absolute; left:46%; top:84%; width:3px; height:3px; border-radius:50%; background:#bfe6ff; box-shadow:0 0 8px 2px rgba(191,230,255,.7); --dx:-18px; animation:spore 14s ease-in-out infinite 3s;"></div>
+    <div style="position:absolute; left:22%; top:86%; width:3px; height:3px; border-radius:50%; background:#e7f0c2; box-shadow:0 0 7px 2px rgba(231,240,194,.6); --dx:30px; animation:spore 13s ease-in-out infinite 6s;"></div>
+    <div style="position:absolute; left:54%; top:80%; width:4px; height:4px; border-radius:50%; background:#cdeec0; box-shadow:0 0 8px 2px rgba(205,238,192,.6); --dx:-26px; animation:spore 16s ease-in-out infinite 1.5s;"></div>
+  </div>
+
+  <!-- ===== ambient UI (fades in focus mode) ===== -->
+  <div style="{{ panelsStyle }}">
+
+    <!-- clock top-left -->
+    <div style="{{ clockPos }} color:#eee8d8; text-shadow:0 2px 22px rgba(0,0,0,.55);">
+      <div style="font-family:'Newsreader',serif; font-weight:500; font-size:58px; line-height:1; letter-spacing:.01em;">{{ clock }}</div>
+      <div style="font-size:14px; color:rgba(238,232,216,.74); margin-top:8px; letter-spacing:.02em;">{{ greeting }} · {{ dateStr }}</div>
+    </div>
+
+    <!-- scratchpad tab + panel (top-right) -->
+    <!-- session tasks tab + panel (left rail, under the clock) -->
+    <button onClick="{{ toggleScratch }}" style="{{ tasksBtnPos }} cursor:pointer; padding:11px 17px; border-radius:999px; font-family:'Nunito Sans',sans-serif; font-size:13.5px; font-weight:600; color:#eee8d8; background:{{ tasksBtnBg }}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(176,198,140,.2); box-shadow:0 12px 30px -12px rgba(0,0,0,.5);">{{ sessionLabel }}</button>
+
+    <div style="box-sizing:border-box; display:flex; flex-direction:column; transform-origin:top left; background:rgba(20,26,16,.6); backdrop-filter:blur(24px) saturate(1.3); -webkit-backdrop-filter:blur(24px) saturate(1.3); border:1px solid rgba(176,198,140,.2); border-radius:20px; box-shadow:0 28px 70px -22px rgba(0,0,0,.7); padding:17px 18px 14px; {{ scratchStyle }}">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px;">
+        <span style="font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:#a9c97f; font-weight:700;">This session</span>
+        <span style="font-size:11px; color:rgba(238,232,216,.4);">{{ saveLabel }}</span>
+      </div>
+
+      <input value="{{ intention }}" onChange="{{ onIntention }}" placeholder="set an intention…" style="width:100%; box-sizing:border-box; border:none; border-bottom:1px solid rgba(176,198,140,.22); background:transparent; color:#f1ead8; font-family:'Newsreader',serif; font-size:18px; line-height:1.4; padding:0 2px 9px; margin-bottom:13px;">
+
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:11px;">
+        <span style="color:rgba(169,201,127,.85); font-size:17px; line-height:1;">+</span>
+        <input value="{{ newTask }}" onChange="{{ onNewTask }}" onKeyDown="{{ onTaskKey }}" placeholder="add a task — press enter" style="flex:1; border:none; background:transparent; color:#ece7d6; font-family:'Nunito Sans',sans-serif; font-size:14px; padding:4px 0;">
+      </div>
+
+      <div style="flex:1; overflow-y:auto; min-height:0; margin:0 -4px; padding:0 4px;">
+        <sc-if value="{{ hasTasks }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ taskVMs }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:11px; padding:8px 2px; border-bottom:1px solid rgba(255,255,255,.05);">
+              <button onClick="{{ t.toggle }}" title="toggle" style="flex:none; width:20px; height:20px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; line-height:1; color:#16200c; {{ t.boxStyle }}">{{ t.check }}</button>
+              <span style="flex:1; font-size:14px; line-height:1.4; {{ t.textStyle }}">{{ t.text }}</span>
+              <button onClick="{{ t.remove }}" title="remove" style="flex:none; cursor:pointer; border:none; background:transparent; color:rgba(238,232,216,.35); font-size:16px; line-height:1; padding:2px 4px;">×</button>
+            </div>
+          </sc-for>
+        </sc-if>
+        <sc-if value="{{ noTasks }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 2px 8px; font-size:13px; color:rgba(238,232,216,.4); font-family:'Newsreader',serif; font-style:italic; line-height:1.5;">No tasks yet — name one small thing to tend to this session.</div>
+        </sc-if>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; margin-top:4px; border-top:1px solid rgba(255,255,255,.08);">
+        <span style="font-size:12px; color:rgba(238,232,216,.5);">{{ taskSummary }}</span>
+        <sc-if value="{{ hasDone }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ clearDone }}" style="cursor:pointer; border:none; background:transparent; color:rgba(169,201,127,.85); font-family:'Nunito Sans',sans-serif; font-size:12px; font-weight:600;">clear done</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- music: control + blended player card, bottom-left -->
+    <div style="{{ musicWrapPos }}">
+
+      <!-- player card (slides up out of the pill) -->
+      <div style="position:absolute; {{ musicCardPos }} transform-origin:bottom left; background:rgba(20,26,16,.56); backdrop-filter:blur(24px) saturate(1.3); -webkit-backdrop-filter:blur(24px) saturate(1.3); border:1px solid rgba(176,198,140,.2); border-radius:20px; box-shadow:0 28px 70px -22px rgba(0,0,0,.7); padding:15px 15px 14px; {{ musicCardStyle }}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; padding:0 2px;">
+          <span style="display:flex; align-items:center; gap:9px;">
+            <span style="display:flex; align-items:flex-end; gap:2.5px; height:13px;">
+              <span style="width:3px; height:13px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out 0s infinite; animation-play-state:{{ eqState }};"></span>
+              <span style="width:3px; height:13px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out .28s infinite; animation-play-state:{{ eqState }};"></span>
+              <span style="width:3px; height:13px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out .14s infinite; animation-play-state:{{ eqState }};"></span>
+            </span>
+            <span style="font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:#a9c97f; font-weight:700;">{{ nowPlayingLabel }}</span>
+          </span>
+          <button onClick="{{ closeMusic }}" title="hide player" style="cursor:pointer; border:none; background:transparent; color:rgba(238,232,216,.5); font-size:18px; line-height:1; padding:2px 4px;">×</button>
+        </div>
+        <div style="width:100%; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000;"><div ref="{{ setYtHost }}" style="width:100%; height:100%;"></div></div>
+        <div style="margin-top:9px; font-size:11.5px; color:rgba(238,232,216,.45); line-height:1.45; padding:0 2px;">Press play above — it keeps playing while you focus.</div>
+      </div>
+
+      <!-- pill toggle -->
+      <button onClick="{{ toggleMusicPanel }}" style="display:flex; align-items:center; gap:11px; cursor:pointer; padding:11px 18px 11px 15px; border-radius:999px; font-family:'Nunito Sans',sans-serif; color:#eee8d8; background:rgba(20,26,16,.5); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(176,198,140,.2); box-shadow:0 12px 30px -12px rgba(0,0,0,.5);">
+        <span style="display:flex; align-items:flex-end; gap:2.5px; height:15px;">
+          <span style="width:3px; height:15px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out 0s infinite; animation-play-state:{{ eqState }};"></span>
+          <span style="width:3px; height:15px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out .28s infinite; animation-play-state:{{ eqState }};"></span>
+          <span style="width:3px; height:15px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out .14s infinite; animation-play-state:{{ eqState }};"></span>
+          <span style="width:3px; height:15px; border-radius:2px; background:#a9c97f; transform-origin:bottom; animation:eq .9s ease-in-out .42s infinite; animation-play-state:{{ eqState }};"></span>
+        </span>
+        <span style="font-size:13.5px; font-weight:600;">{{ musicLabel }}</span>
+      </button>
+    </div>
+
+    <!-- focus toggle bottom-right -->
+    <button onClick="{{ enterFocus }}" style="{{ focusBtnPos }} cursor:pointer; padding:12px 18px; border-radius:999px; font-family:'Nunito Sans',sans-serif; font-size:13.5px; font-weight:600; color:#eee8d8; background:rgba(20,26,16,.5); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(176,198,140,.2); box-shadow:0 12px 30px -12px rgba(0,0,0,.5);">{{ hideLabel }}</button>
+  </div>
+
+  <!-- ===== pomodoro (stays in focus mode) ===== -->
+  <div style="box-sizing:border-box; padding:28px 26px; border-radius:26px; text-align:center; {{ timerCardStyle }}">
+    <div style="font-size:11px; letter-spacing:.3em; text-transform:uppercase; font-weight:700; color:{{ modeAccent }};">{{ modeLabel }}</div>
+    <div style="font-family:'Newsreader',serif; font-size:78px; line-height:1; color:#f3eedf; margin:12px 0 4px; font-weight:500; letter-spacing:.01em; text-shadow:0 4px 30px rgba(0,0,0,.5); font-variant-numeric:tabular-nums;">{{ timer }}</div>
+    <div style="font-size:13px; color:rgba(238,232,216,.7); line-height:1.5; min-height:38px; display:flex; align-items:center; justify-content:center; padding:0 4px;">{{ mascotStatus }}</div>
+
+    <div style="{{ timerControlsStyle }}">
+      <div style="height:4px; border-radius:3px; background:rgba(255,255,255,.13); margin:16px 0 16px; overflow:hidden;">
+        <div style="height:100%; border-radius:3px; width:{{ progressPct }}; background:{{ modeAccent }}; transition:width 1s linear;"></div>
+      </div>
+      <div style="display:flex; gap:7px; justify-content:center; margin-bottom:18px;">
+        <sc-for list="{{ dots }}" as="c" hint-placeholder-count="4">
+          <span style="width:8px; height:8px; border-radius:50%; background:{{ c }}; transition:background .3s ease;"></span>
+        </sc-for>
+      </div>
+      <button onClick="{{ toggleTimer }}" style="width:100%; padding:13px 0; border:none; cursor:pointer; border-radius:13px; background:#8fae5e; color:#16200c; font-family:'Nunito Sans',sans-serif; font-weight:700; font-size:14.5px; box-shadow:0 6px 18px -6px rgba(143,174,94,.7);">{{ startLabel }}</button>
+      <div style="display:flex; gap:7px; justify-content:center; margin-top:10px;">
+        <button onClick="{{ resetTimer }}" title="reset this phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">↺</button>
+        <button onClick="{{ skipPhase }}" title="skip to next phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">⏭</button>
+        <button onClick="{{ toggleSettings }}" title="timer settings" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:{{ gearBg }}; color:#dfe6cf; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">⚙</button>
+      </div>
+    </div>
+
+    <!-- settings popover (anchored to the left of the timer card) -->
+    <div style="position:absolute; {{ settingsPos }} text-align:left; background:rgba(20,26,16,.64); backdrop-filter:blur(26px) saturate(1.3); -webkit-backdrop-filter:blur(26px) saturate(1.3); border:1px solid rgba(176,198,140,.2); border-radius:20px; box-shadow:0 30px 72px -22px rgba(0,0,0,.72); padding:15px 18px 16px; {{ settingsStyle }}">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:#a9c97f; font-weight:700;">Timer settings</span>
+        <button onClick="{{ toggleSettings }}" title="close" style="cursor:pointer; border:none; background:transparent; color:rgba(238,232,216,.5); font-size:18px; line-height:1; padding:2px 4px;">×</button>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Focus</span>
+        <span style="display:flex; align-items:center; gap:9px;">
+          <button onClick="{{ decFocus }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+          <span style="min-width:54px; text-align:center; font-size:13.5px; font-weight:700; color:#f3eedf; font-variant-numeric:tabular-nums;">{{ focusLabel }}</span>
+          <button onClick="{{ incFocus }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+        </span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Short break</span>
+        <span style="display:flex; align-items:center; gap:9px;">
+          <button onClick="{{ decShort }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+          <span style="min-width:54px; text-align:center; font-size:13.5px; font-weight:700; color:#f3eedf; font-variant-numeric:tabular-nums;">{{ shortLabel }}</span>
+          <button onClick="{{ incShort }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+        </span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Long break</span>
+        <span style="display:flex; align-items:center; gap:9px;">
+          <button onClick="{{ decLong }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+          <span style="min-width:54px; text-align:center; font-size:13.5px; font-weight:700; color:#f3eedf; font-variant-numeric:tabular-nums;">{{ longLabel }}</span>
+          <button onClick="{{ incLong }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+        </span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Sessions / cycle</span>
+        <span style="display:flex; align-items:center; gap:9px;">
+          <button onClick="{{ decCycle }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center;">−</button>
+          <span style="min-width:54px; text-align:center; font-size:13.5px; font-weight:700; color:#f3eedf; font-variant-numeric:tabular-nums;">{{ cycleLabel }}</span>
+          <button onClick="{{ incCycle }}" style="width:26px; height:26px; border:none; cursor:pointer; border-radius:8px; background:rgba(255,255,255,.1); color:#eee8d8; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">+</button>
+        </span>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Auto-start next</span>
+        <button onClick="{{ toggleAuto }}" style="position:relative; width:42px; height:24px; border:none; cursor:pointer; border-radius:999px; padding:0; transition:background .25s ease; {{ autoTrackStyle }}">
+          <span style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .25s ease; {{ autoKnobStyle }}"></span>
+        </button>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0 4px; border-top:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:13px; color:rgba(238,232,216,.82);">Chime on phase end</span>
+        <button onClick="{{ toggleSound }}" style="position:relative; width:42px; height:24px; border:none; cursor:pointer; border-radius:999px; padding:0; transition:background .25s ease; {{ soundTrackStyle }}">
+          <span style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .25s ease; {{ soundKnobStyle }}"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- focus-mode return hint -->
+  <sc-if value="{{ focusHidden }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute; left:50%; bottom:34px; transform:translateX(-50%); font-size:13px; letter-spacing:.06em; color:rgba(238,232,216,.7); animation:hintfade 3.4s ease-in-out infinite; pointer-events:none;">tap anywhere to return</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;playlistUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;https://www.youtube.com/watch?v=5ONpuXIyF98&amp;list=RD5ONpuXIyF98&amp;start_radio=1&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    now: new Date(),
+    mode: 'focus',        // 'focus' | 'break'
+    running: false,
+    remaining: 25 * 60,
+    completed: 0,         // focus sessions finished (0..4)
+    intention: '',
+    tasks: [],            // { id, text, done }
+    newTask: '',
+    saved: true,
+    scratchOpen: false,
+    focusHidden: false,
+    musicOn: false,
+    musicOpen: false,
+    settingsOpen: false,
+    mobile: typeof window !== 'undefined' && window.innerWidth < 640,
+    settings: { focus: 25, shortBreak: 5, longBreak: 15, cycle: 4, autoStart: false, sound: true },
+  };
+
+  DEFAULT_PLAYLIST = 'https://www.youtube.com/watch?v=5ONpuXIyF98&list=RD5ONpuXIyF98&start_radio=1';
+  VOLUME = 32;
+
+  RANGES = { focus: [5, 90, 5], shortBreak: [1, 30, 1], longBreak: [5, 45, 5], cycle: [2, 8, 1] };
+
+  durOf(set, mode) {
+    const m = mode === 'focus' ? set.focus : mode === 'long' ? set.longBreak : set.shortBreak;
+    return m * 60;
+  }
+
+  adjust(key, delta) {
+    this.setState((p) => {
+      const [min, max] = this.RANGES[key];
+      const v = Math.max(min, Math.min(max, (p.settings[key] || 0) + delta));
+      const settings = Object.assign({}, p.settings, { [key]: v });
+      const patch = { settings };
+      if (!p.running) patch.remaining = this.durOf(settings, p.mode);
+      if (key === 'cycle' && p.completed > v) patch.completed = v;
+      try { localStorage.setItem('terrarium_settings', JSON.stringify(settings)); } catch (e) {}
+      return patch;
+    }, () => this.updateTitle());
+  }
+
+  toggleSetting(key) {
+    this.setState((p) => {
+      const settings = Object.assign({}, p.settings, { [key]: !p.settings[key] });
+      try { localStorage.setItem('terrarium_settings', JSON.stringify(settings)); } catch (e) {}
+      return { settings };
+    });
+  }
+
+  persistTasks(tasks) { try { localStorage.setItem('terrarium_tasks', JSON.stringify(tasks)); } catch (e) {} }
+  addTask() {
+    const text = (this.state.newTask || '').trim();
+    if (!text) return;
+    this.setState((p) => {
+      const tasks = p.tasks.concat({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 6), text: text, done: false });
+      this.persistTasks(tasks);
+      return { tasks, newTask: '' };
+    });
+  }
+  toggleTask(id) {
+    this.setState((p) => {
+      const tasks = p.tasks.map((t) => (t.id === id ? Object.assign({}, t, { done: !t.done }) : t));
+      this.persistTasks(tasks);
+      return { tasks };
+    });
+  }
+  deleteTask(id) {
+    this.setState((p) => {
+      const tasks = p.tasks.filter((t) => t.id !== id);
+      this.persistTasks(tasks);
+      return { tasks };
+    });
+  }
+  clearDone() {
+    this.setState((p) => {
+      const tasks = p.tasks.filter((t) => !t.done);
+      this.persistTasks(tasks);
+      return { tasks };
+    });
+  }
+
+  componentDidMount() {
+    try {
+      const i = localStorage.getItem('terrarium_intention');
+      if (i !== null) this.setState({ intention: i });
+    } catch (e) {}
+    try {
+      const t = JSON.parse(localStorage.getItem('terrarium_tasks') || '[]');
+      if (Array.isArray(t)) this.setState({ tasks: t });
+    } catch (e) {}
+    try {
+      const raw = localStorage.getItem('terrarium_settings');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this.setState((p) => {
+          const settings = Object.assign({}, p.settings, parsed);
+          return { settings, remaining: p.running ? p.remaining : this.durOf(settings, p.mode) };
+        }, () => this.updateTitle());
+      }
+    } catch (e) {}
+    this.ensureTicking();
+    this.updateTitle();
+    this._onResize = () => {
+      const m = window.innerWidth < 640;
+      if (m !== this.state.mobile) this.setState({ mobile: m });
+    };
+    window.addEventListener('resize', this._onResize);
+  }
+
+  ensureTicking() {
+    if (!this.iv) this.iv = setInterval(() => this.tick(), 1000);
+  }
+
+  componentDidUpdate() {
+    // self-heal: a hot-reload / rehydrate can leave the live instance without an interval
+    this.ensureTicking();
+  }
+
+  updateTitle() {
+    const s = this.state;
+    const ml = s.mode === 'focus' ? 'Focus' : s.mode === 'long' ? 'Long break' : 'Break';
+    document.title = (s.running ? this.fmt(s.remaining) + ' · ' + ml : ml + ' · paused') + ' — Terrarium';
+  }
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    clearInterval(this.iv);
+    this.iv = null;
+    clearTimeout(this._ytTimer);
+    if (this._player && this._player.destroy) { try { this._player.destroy(); } catch (e) {} }
+  }
+
+  tick() {
+    this.setState((s) => {
+      const now = new Date();
+      const minuteChanged = !s.now || now.getMinutes() !== s.now.getMinutes();
+      let musicNext;
+      if (this._player && this._ready && this._player.getPlayerState) {
+        try { musicNext = this._player.getPlayerState() === 1; } catch (e) {}
+        if (musicNext === s.musicOn) musicNext = undefined;
+      }
+      if (!s.running && !minuteChanged && musicNext === undefined) return null; // idle: skip re-render so fades aren't interrupted
+      const next = { now };
+      if (musicNext !== undefined) next.musicOn = musicNext;
+      if (s.running) {
+        if (s.remaining > 1) {
+          next.remaining = s.remaining - 1;
+        } else {
+          // phase complete: chime, then advance (auto-start next only if enabled)
+          const set = s.settings, cycle = set.cycle;
+          if (set.sound) setTimeout(() => this.chime(), 0);
+          next.running = !!set.autoStart;
+          if (s.mode === 'focus') {
+            const completed = Math.min(cycle, s.completed + 1);
+            next.completed = completed;
+            next.mode = completed >= cycle ? 'long' : 'break';
+            next.remaining = this.durOf(set, next.mode);
+          } else {
+            next.mode = 'focus';
+            next.remaining = this.durOf(set, 'focus');
+            if (s.completed >= cycle) next.completed = 0;
+          }
+        }
+      }
+      return next;
+    }, () => this.updateTitle());
+  }
+
+  parseMusicUrl() {
+    const url = (this.props && this.props.playlistUrl) || this.DEFAULT_PLAYLIST;
+    const list = (/[?&]list=([^&]+)/.exec(url) || [])[1] || null;
+    const video = (/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/.exec(url) || [])[1] || null;
+    return { list, video };
+  }
+
+  initYt() {
+    if (this._player || !this._ytHost) return;
+    const make = () => {
+      if (this._player) return;
+      if (!window.YT || !window.YT.Player) { this._ytTimer = setTimeout(make, 250); return; }
+      const { list, video } = this.parseMusicUrl();
+      const vars = { autoplay: 0, controls: 1, playsinline: 1, modestbranding: 1, rel: 0, loop: 1, fs: 0 };
+      if (list) { vars.listType = 'playlist'; vars.list = list; }
+      try {
+        this._player = new window.YT.Player(this._ytHost, {
+          width: '100%',
+          height: '100%',
+          videoId: video || undefined,
+          playerVars: vars,
+          events: {
+            onReady: () => {
+              this._ready = true;
+              try { this._player.setVolume(this.VOLUME); } catch (e) {}
+            },
+          },
+        });
+      } catch (e) {}
+    };
+    make();
+  }
+
+  fmt(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  chime() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      this._ac = this._ac || new Ctx();
+      const ac = this._ac;
+      if (ac.state === 'suspended') ac.resume();
+      const t0 = ac.currentTime;
+      [880, 1174.66, 1567.98].forEach((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        const t = t0 + i * 0.16;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.16, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+        o.connect(g).connect(ac.destination);
+        o.start(t); o.stop(t + 1.2);
+      });
+    } catch (e) {}
+  }
+
+  renderVals() {
+    const s = this.state;
+    const h = s.now.getHours();
+    const greeting =
+      h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+    const clock = s.now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = s.now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const set = s.settings;
+    const total = this.durOf(set, s.mode);
+    const progressPct = (100 - (s.remaining / total) * 100).toFixed(2) + '%';
+    const modeAccent = s.mode === 'focus' ? '#a9c97f' : s.mode === 'long' ? '#7fb7c4' : '#e0b86a';
+
+    let mascotStatus;
+    if (s.mode === 'focus') {
+      mascotStatus = s.running ? '🌱 the spirit is tending the garden' : '🌿 the spirit waits, watering can in hand';
+    } else if (s.mode === 'long') {
+      mascotStatus = s.running ? '🍃 the spirit takes a long, easy rest' : '💫 a longer rest — you\'ve earned it';
+    } else {
+      mascotStatus = s.running ? '☕ the spirit rests with a cup of dew' : '😴 the spirit naps in a walnut shell';
+    }
+
+    const dots = Array.from({ length: set.cycle }, (_, i) => (i < s.completed ? '#a9c97f' : 'rgba(255,255,255,.16)'));
+
+    const mobile = s.mobile;
+    const scratchPosCss = mobile ? 'position:absolute; z-index:60; left:16px; right:16px; bottom:84px; max-height:calc(100vh - 200px);' : 'position:absolute; left:42px; top:192px; width:332px; max-height:calc(100vh - 240px);';
+    const timerPosCss = mobile ? 'position:absolute; left:50%; top:108px; transform:translateX(-50%); width:min(330px,calc(100vw - 36px));' : 'position:absolute; right:5%; top:50%; transform:translateY(-50%); width:268px;';
+
+    const glass =
+      'background:rgba(20,26,16,.5); backdrop-filter:blur(24px) saturate(1.3); -webkit-backdrop-filter:blur(24px) saturate(1.3); border:1px solid rgba(176,198,140,.22); box-shadow:0 30px 72px -24px rgba(0,0,0,.7);';
+    const bare =
+      'background:transparent; border:1px solid transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none;';
+
+    return {
+      clock, greeting, dateStr,
+      timer: this.fmt(s.remaining),
+      modeLabel: s.mode === 'focus' ? 'Focus' : s.mode === 'long' ? 'Long break' : 'Break',
+      modeAccent,
+      mascotStatus,
+      progressPct,
+      startLabel: s.running
+        ? 'Pause'
+        : (s.remaining === total
+            ? (s.mode === 'focus' ? 'Start session' : s.mode === 'long' ? 'Start long break' : 'Start break')
+            : 'Resume'),
+      dots,
+
+      // ---- timer settings ----
+      gearBg: s.settingsOpen ? 'rgba(169,201,127,.22)' : 'rgba(255,255,255,.08)',
+      toggleSettings: (e) => { e && e.stopPropagation(); this.setState((p) => ({ settingsOpen: !p.settingsOpen })); },
+      settingsStyle: s.settingsOpen
+        ? (mobile
+            ? 'opacity:1; transform:translateX(-50%) scale(1); pointer-events:auto; transition:opacity .4s ease, transform .4s cubic-bezier(.2,.8,.2,1);'
+            : 'opacity:1; transform:translateY(-50%) scale(1); pointer-events:auto; transition:opacity .4s ease, transform .4s cubic-bezier(.2,.8,.2,1);')
+        : (mobile
+            ? 'opacity:0; transform:translateX(-50%) scale(.96); pointer-events:none; transition:opacity .3s ease, transform .3s ease;'
+            : 'opacity:0; transform:translateY(-50%) scale(.96); pointer-events:none; transition:opacity .3s ease, transform .3s ease;'),
+
+      // ---- responsive position holes ----
+      clockPos: mobile ? 'position:absolute; display:none;' : 'position:absolute; left:42px; top:38px;',
+      tasksBtnPos: mobile ? 'position:absolute; left:50%; transform:translateX(-50%); bottom:26px; top:auto;' : 'position:absolute; left:42px; top:140px;',
+      musicWrapPos: mobile ? 'position:absolute; z-index:60; left:24px; bottom:26px;' : 'position:absolute; left:42px; bottom:40px;',
+      musicCardPos: mobile ? 'left:0; bottom:58px; z-index:60; width:min(320px,calc(100vw - 48px));' : 'left:0; bottom:60px; width:316px;',
+      focusBtnPos: mobile ? 'position:absolute; right:24px; bottom:26px;' : 'position:absolute; right:24px; bottom:40px;',
+      hideLabel: mobile ? '◐ Hide' : '◐ Hide everything',
+      settingsPos: mobile ? 'top:calc(100% + 12px); left:50%; right:auto; width:min(300px,calc(100vw - 40px));' : 'top:50%; right:calc(100% + 18px); width:266px;',
+      focusLabel: set.focus + ' min',
+      shortLabel: set.shortBreak + ' min',
+      longLabel: set.longBreak + ' min',
+      cycleLabel: String(set.cycle),
+      incFocus: () => this.adjust('focus', 5), decFocus: () => this.adjust('focus', -5),
+      incShort: () => this.adjust('shortBreak', 1), decShort: () => this.adjust('shortBreak', -1),
+      incLong: () => this.adjust('longBreak', 5), decLong: () => this.adjust('longBreak', -5),
+      incCycle: () => this.adjust('cycle', 1), decCycle: () => this.adjust('cycle', -1),
+      toggleAuto: () => this.toggleSetting('autoStart'),
+      toggleSound: () => this.toggleSetting('sound'),
+      autoTrackStyle: 'background:' + (set.autoStart ? '#8fae5e' : 'rgba(255,255,255,.14)') + ';',
+      autoKnobStyle: 'transform:translateX(' + (set.autoStart ? '18px' : '0px') + ');',
+      soundTrackStyle: 'background:' + (set.sound ? '#8fae5e' : 'rgba(255,255,255,.14)') + ';',
+      soundKnobStyle: 'transform:translateX(' + (set.sound ? '18px' : '0px') + ');',
+
+      saveLabel: s.saved ? 'saved' : 'saving…',
+      intention: s.intention,
+      onIntention: (e) => {
+        const v = e.target.value;
+        this.setState({ intention: v, saved: false });
+        clearTimeout(this._sv);
+        this._sv = setTimeout(() => {
+          try { localStorage.setItem('terrarium_intention', v); } catch (err) {}
+          this.setState({ saved: true });
+        }, 500);
+      },
+      newTask: s.newTask,
+      onNewTask: (e) => this.setState({ newTask: e.target.value }),
+      onTaskKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.addTask(); } },
+      hasTasks: s.tasks.length > 0,
+      noTasks: s.tasks.length === 0,
+      hasDone: s.tasks.some((t) => t.done),
+      taskVMs: s.tasks.map((t) => ({
+        text: t.text,
+        check: t.done ? '✓' : '',
+        boxStyle: t.done
+          ? 'background:#8fae5e; border:1px solid #8fae5e;'
+          : 'background:transparent; border:1.5px solid rgba(176,198,140,.45);',
+        textStyle: t.done ? 'color:rgba(238,232,216,.4); text-decoration:line-through;' : 'color:#ece7d6;',
+        toggle: () => this.toggleTask(t.id),
+        remove: () => this.deleteTask(t.id),
+      })),
+      taskSummary: s.tasks.length
+        ? (s.tasks.filter((t) => t.done).length + ' of ' + s.tasks.length + ' done')
+        : 'nothing planned',
+      clearDone: (e) => { e && e.stopPropagation(); this.clearDone(); },
+      tasksBtnBg: s.scratchOpen ? 'rgba(169,201,127,.2)' : 'rgba(20,26,16,.5)',
+      taskBadge: (() => { const open = s.tasks.filter((t) => !t.done).length; return open ? '  ·  ' + open : ''; })(),
+      sessionLabel: (() => { if (s.scratchOpen) return '✕ Close'; const open = s.tasks.filter((t) => !t.done).length; return '✓ Session' + (open ? '  ·  ' + open : ''); })(),
+
+      toggleTimer: (e) => { e && e.stopPropagation(); if (!this.state.running) this.chime && (this._ac && this._ac.state === 'suspended' && this._ac.resume()); this.setState((p) => ({ running: !p.running }), () => this.updateTitle()); },
+      resetTimer: (e) => {
+        e && e.stopPropagation();
+        this.setState((p) => ({ running: false, remaining: this.durOf(p.settings, p.mode) }), () => this.updateTitle());
+      },
+      skipPhase: (e) => {
+        e && e.stopPropagation();
+        this.setState((s) => {
+          const set = s.settings, cycle = set.cycle;
+          const next = { running: false };
+          if (s.mode === 'focus') {
+            const completed = Math.min(cycle, s.completed + 1);
+            next.completed = completed;
+            next.mode = completed >= cycle ? 'long' : 'break';
+            next.remaining = this.durOf(set, next.mode);
+          } else {
+            next.mode = 'focus';
+            next.remaining = this.durOf(set, 'focus');
+            if (s.completed >= cycle) next.completed = 0;
+          }
+          return next;
+        }, () => this.updateTitle());
+      },
+
+      toggleScratch: (e) => { e && e.stopPropagation(); this.setState((p) => ({ scratchOpen: !p.scratchOpen })); },
+      scratchStyle: scratchPosCss + ' ' + (s.scratchOpen
+        ? 'opacity:1; transform:translateY(0) scale(1); pointer-events:auto; transition:opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1);'
+        : 'opacity:0; transform:translateY(-10px) scale(.96); pointer-events:none; transition:opacity .35s ease, transform .35s ease;'),
+
+      enterFocus: (e) => { e && e.stopPropagation(); this.setState({ focusHidden: true, scratchOpen: false, settingsOpen: false }); },
+      focusHidden: s.focusHidden,
+      setYtHost: (el) => { this._ytHost = el; if (el && this.state.musicOpen) this.initYt(); },
+      musicOn: s.musicOn,
+      musicLabel: s.musicOpen ? '✕ Close' : 'Music',
+      nowPlayingLabel: s.musicOn ? 'Now playing' : 'Music',
+      eqState: s.musicOn ? 'running' : 'paused',
+      toggleMusicPanel: (e) => { e && e.stopPropagation(); this.setState((p) => ({ musicOpen: !p.musicOpen }), () => { if (this.state.musicOpen) this.initYt(); }); },
+      closeMusic: (e) => { e && e.stopPropagation(); this.setState({ musicOpen: false }); },
+      musicCardStyle: s.musicOpen
+        ? 'opacity:1; transform:translateY(0) scale(1); pointer-events:auto; transition:opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1);'
+        : 'opacity:0; transform:translateY(10px) scale(.96); pointer-events:none; transition:opacity .35s ease, transform .35s ease;',
+      onSceneClick: () => { if (this.state.focusHidden) this.setState({ focusHidden: false }); },
+
+      panelsStyle: s.focusHidden
+        ? 'opacity:0; pointer-events:none; transition:opacity .55s ease;'
+        : 'opacity:1; transition:opacity .5s ease;',
+      timerCardStyle: timerPosCss + ' ' + (s.focusHidden ? bare : glass) + ' transition:background .55s ease, box-shadow .55s ease, border-color .55s ease;',
+      timerControlsStyle: s.focusHidden
+        ? 'opacity:0; max-height:0; overflow:hidden; pointer-events:none; transition:opacity .4s ease, max-height .55s ease;'
+        : 'opacity:1; max-height:200px; transition:opacity .45s ease .1s, max-height .55s ease;',
+    };
+  }
+}
+</script>
+</body>
+</html>
