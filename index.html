@@ -429,7 +429,7 @@ class Component extends DCLogic {
         this._player = new window.YT.Player(this._ytHost, {
           width: '100%',
           height: '100%',
-          videoId: video || undefined,
+          ...(video ? { videoId: video } : {}),
           playerVars: vars,
           events: {
             onReady: () => {
