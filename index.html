@@ -17,8 +17,7 @@
     ::selection{ background:rgba(169,201,127,.35); }
     textarea::placeholder{ color:rgba(238,232,216,.34); }
     textarea:focus{ outline:none; }
-    @keyframes breathe { 0%,100%{ transform:scale(1.03) translate(0,0);} 50%{ transform:scale(1.06) translate(-0.6%,-0.4%);} }
-    @keyframes mglow { 0%,100%{ opacity:.4; transform:scale(.9);} 50%{ opacity:.95; transform:scale(1.12);} }
+@keyframes mglow { 0%,100%{ opacity:.4; transform:scale(.9);} 50%{ opacity:.95; transform:scale(1.12);} }
     @keyframes eye { 0%,100%{ opacity:.55;} 50%{ opacity:1;} }
     @keyframes spore { 0%{ transform:translate(0,0); opacity:0;} 12%{ opacity:.8;} 88%{ opacity:.7;} 100%{ transform:translate(var(--dx,18px),-140px); opacity:0;} }
     @keyframes hintfade { 0%,100%{ opacity:.32;} 50%{ opacity:.7;} }
@@ -31,7 +30,7 @@
 
   <!-- ===== the living terrarium (illustrated home scene) ===== -->
   <div style="position:absolute; inset:0; overflow:hidden;">
-    <div style="position:absolute; inset:0; animation:breathe 26s ease-in-out infinite; transform-origin:42% 58%;">
+    <div style="position:absolute; inset:0;">
       <img src="assets/terrarium.webp" alt="terrarium" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
     </div>
     <div style="position:absolute; left:11%; top:80%; width:120px; height:120px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,#7fe0d0,transparent 68%); filter:blur(8px); animation:mglow 6s ease-in-out infinite;"></div>
@@ -280,6 +279,7 @@ class Component extends DCLogic {
   addTask() {
     const text = (this.state.newTask || '').trim();
     if (!text) return;
+    window.trackEvent && window.trackEvent('task_added');
     this.setState((p) => {
       const tasks = p.tasks.concat({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 6), text: text, done: false });
       this.persistTasks(tasks);
@@ -393,6 +393,11 @@ class Component extends DCLogic {
           // phase complete: chime, then advance (auto-start next only if enabled)
           const set = s.settings, cycle = set.cycle;
           if (set.sound) setTimeout(() => this.chime(), 0);
+          if (s.mode === 'focus') {
+            setTimeout(() => { window.trackEvent && window.trackEvent('focus_session_complete'); }, 0);
+          } else {
+            setTimeout(() => { window.trackEvent && window.trackEvent('break_complete'); }, 0);
+          }
           next.running = !!set.autoStart;
           if (s.mode === 'focus') {
             const completed = Math.min(cycle, s.completed + 1);
@@ -585,7 +590,16 @@ class Component extends DCLogic {
       taskBadge: (() => { const open = s.tasks.filter((t) => !t.done).length; return open ? '  ·  ' + open : ''; })(),
       sessionLabel: (() => { if (s.scratchOpen) return '✕ Close'; const open = s.tasks.filter((t) => !t.done).length; return '✓ Session' + (open ? '  ·  ' + open : ''); })(),
 
-      toggleTimer: (e) => { e && e.stopPropagation(); if (!this.state.running) this.chime && (this._ac && this._ac.state === 'suspended' && this._ac.resume()); this.setState((p) => ({ running: !p.running }), () => this.updateTitle()); },
+      toggleTimer: (e) => {
+        e && e.stopPropagation();
+        if (!this.state.running) {
+          if (this._ac && this._ac.state === 'suspended') this._ac.resume();
+          window.trackEvent && window.trackEvent('timer_start');
+        } else {
+          window.trackEvent && window.trackEvent('timer_pause');
+        }
+        this.setState((p) => ({ running: !p.running }), () => this.updateTitle());
+      },
       resetTimer: (e) => {
         e && e.stopPropagation();
         this.setState((p) => ({ running: false, remaining: this.durOf(p.settings, p.mode) }), () => { this.updateTitle(); this.persistTimer(); });
@@ -621,7 +635,13 @@ class Component extends DCLogic {
       musicLabel: s.musicOpen ? '✕ Close' : 'Music',
       nowPlayingLabel: s.musicOn ? 'Now playing' : 'Music',
       eqState: s.musicOn ? 'running' : 'paused',
-      toggleMusicPanel: (e) => { e && e.stopPropagation(); this.setState((p) => ({ musicOpen: !p.musicOpen }), () => { if (this.state.musicOpen) this.initYt(); }); },
+      toggleMusicPanel: (e) => {
+        e && e.stopPropagation();
+        this.setState((p) => {
+          if (!p.musicOpen) window.trackEvent && window.trackEvent('music_opened');
+          return { musicOpen: !p.musicOpen };
+        }, () => { if (this.state.musicOpen) this.initYt(); });
+      },
       closeMusic: (e) => { e && e.stopPropagation(); this.setState({ musicOpen: false }); },
       musicCardStyle: s.musicOpen
         ? 'opacity:1; transform:translateY(0) scale(1); pointer-events:auto; transition:opacity .45s ease, transform .45s cubic-bezier(.2,.8,.2,1);'
@@ -638,6 +658,57 @@ class Component extends DCLogic {
     };
   }
 }
+</script>
+
+<!-- ===== GDPR consent banner ===== -->
+<div id="consent-banner" style="display:none; position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:9999; align-items:center; gap:16px; padding:13px 18px; border-radius:999px; background:rgba(20,26,16,.75); backdrop-filter:blur(24px) saturate(1.3); -webkit-backdrop-filter:blur(24px) saturate(1.3); border:1px solid rgba(176,198,140,.2); box-shadow:0 12px 30px -12px rgba(0,0,0,.6); font-family:'Nunito Sans',sans-serif; font-size:13px; color:rgba(238,232,216,.82); white-space:nowrap; transition:opacity .35s ease;">
+  <span>We use analytics to understand how GrowFocus is used. No ads, no selling data. <a href="privacy.html" style="color:#a9c97f; text-decoration:none;">Privacy policy</a></span>
+  <button id="consent-decline" style="cursor:pointer; padding:7px 14px; border-radius:999px; border:1px solid rgba(176,198,140,.25); background:transparent; font-family:'Nunito Sans',sans-serif; font-size:13px; font-weight:600; color:rgba(238,232,216,.65);">Decline</button>
+  <button id="consent-accept" style="cursor:pointer; padding:7px 16px; border-radius:999px; border:none; background:#8fae5e; font-family:'Nunito Sans',sans-serif; font-size:13px; font-weight:700; color:#16200c;">Accept</button>
+</div>
+
+<script>
+  (function () {
+    var GA_ID = 'G-Z2PHHVFF39';
+
+    function loadGA() {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', GA_ID);
+    }
+
+    window.trackEvent = function (name) {
+      if (window.gtag) gtag('event', name);
+    };
+
+    var banner = document.getElementById('consent-banner');
+    var consent = null;
+    try { consent = localStorage.getItem('ga_consent'); } catch (e) {}
+
+    if (consent === 'granted') {
+      loadGA();
+    } else if (consent === null) {
+      banner.style.display = 'flex';
+    }
+
+    document.getElementById('consent-accept').addEventListener('click', function () {
+      try { localStorage.setItem('ga_consent', 'granted'); } catch (e) {}
+      banner.style.opacity = '0';
+      setTimeout(function () { banner.style.display = 'none'; }, 350);
+      loadGA();
+    });
+
+    document.getElementById('consent-decline').addEventListener('click', function () {
+      try { localStorage.setItem('ga_consent', 'denied'); } catch (e) {}
+      banner.style.opacity = '0';
+      setTimeout(function () { banner.style.display = 'none'; }, 350);
+    });
+  })();
 </script>
 </body>
 </html>
