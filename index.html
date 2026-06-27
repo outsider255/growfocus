@@ -138,6 +138,15 @@
         <div style="margin-top:6px; font-size:11px; padding:0 2px;">Music by <a href="https://www.youtube.com/@MossyMelodiesLoFi" target="_blank" rel="noopener" style="color:rgba(169,201,127,.65); text-decoration:none;">Moss &amp; Melodies LoFi ↗</a></div>
       </div>
 
+      <!-- channel promo pill -->
+      <sc-if value="{{ promoVisible }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute; bottom:54px; left:0; display:flex; align-items:center; gap:10px; padding:9px 14px 9px 12px; border-radius:999px; background:rgba(20,26,16,.5); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(176,198,140,.22); box-shadow:0 8px 24px -10px rgba(0,0,0,.5); white-space:nowrap;">
+          <span style="width:7px; height:7px; border-radius:50%; background:#a9c97f; box-shadow:0 0 8px rgba(169,201,127,.7); flex:none;"></span>
+          <a href="https://www.youtube.com/@MossyMelodiesLoFi" target="_blank" rel="noopener" style="font-family:'Nunito Sans',sans-serif; font-size:12.5px; font-weight:600; color:#eee8d8; text-decoration:none; letter-spacing:.01em;">Moss &amp; Melodies LoFi ↗</a>
+          <button onClick="{{ dismissPromo }}" title="dismiss" style="cursor:pointer; border:none; background:transparent; color:rgba(238,232,216,.4); font-size:15px; line-height:1; padding:0 0 0 2px; flex:none;">×</button>
+        </div>
+      </sc-if>
+
       <!-- pill toggle -->
       <button onClick="{{ toggleMusicPanel }}" style="display:flex; align-items:center; gap:11px; cursor:pointer; padding:11px 18px 11px 15px; border-radius:999px; font-family:'Nunito Sans',sans-serif; color:#eee8d8; background:rgba(20,26,16,.5); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(176,198,140,.2); box-shadow:0 12px 30px -12px rgba(0,0,0,.5);">
         <span style="display:flex; align-items:flex-end; gap:2.5px; height:15px;">
@@ -260,6 +269,7 @@ class Component extends DCLogic {
     focusHidden: false,
     musicOn: false,
     musicOpen: false,
+    promoOpen: true,
     settingsOpen: false,
     mobile: typeof window !== 'undefined' && window.innerWidth < 640,
     settings: { focus: 25, shortBreak: 5, longBreak: 15, cycle: 4, autoStart: false, sound: true },
@@ -364,6 +374,7 @@ class Component extends DCLogic {
         }
       }
     } catch (e) {}
+    try { if (localStorage.getItem('terrarium_promo_dismissed')) this.setState({ promoOpen: false }); } catch (e) {}
     this.ensureTicking();
     this.updateTitle();
     this._onResize = () => {
@@ -646,6 +657,13 @@ class Component extends DCLogic {
           }
           return next;
         }, () => { this.updateTitle(); this.persistTimer(); });
+      },
+
+      promoVisible: s.promoOpen && !s.musicOpen && !mobile,
+      dismissPromo: (e) => {
+        e && e.stopPropagation();
+        try { localStorage.setItem('terrarium_promo_dismissed', '1'); } catch (err) {}
+        this.setState({ promoOpen: false });
       },
 
       toggleScratch: (e) => { e && e.stopPropagation(); this.setState((p) => ({ scratchOpen: !p.scratchOpen })); },
