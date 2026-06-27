@@ -171,9 +171,10 @@
       </div>
       <button onClick="{{ toggleTimer }}" style="width:100%; padding:13px 0; border:none; cursor:pointer; border-radius:13px; background:#8fae5e; color:#16200c; font-family:'Nunito Sans',sans-serif; font-weight:700; font-size:14.5px; box-shadow:0 6px 18px -6px rgba(143,174,94,.7);">{{ startLabel }}</button>
       <div style="display:flex; gap:7px; justify-content:center; margin-top:10px;">
-        <button onClick="{{ resetTimer }}" title="reset this phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">↺</button>
-        <button onClick="{{ skipPhase }}" title="skip to next phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">⏭</button>
-        <button onClick="{{ toggleSettings }}" title="timer settings" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:{{ gearBg }}; color:#dfe6cf; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:rgba(255,255,255,.16);">⚙</button>
+        <button onClick="{{ fullReset }}" title="reset everything — back to session 1" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;">⏮</button>
+        <button onClick="{{ resetTimer }}" title="reset this phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">↺</button>
+        <button onClick="{{ skipPhase }}" title="skip to next phase" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:rgba(255,255,255,.08); color:#dfe6cf; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;">⏭</button>
+        <button onClick="{{ toggleSettings }}" title="timer settings" style="width:40px; height:38px; border:none; cursor:pointer; border-radius:11px; background:{{ gearBg }}; color:#dfe6cf; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;">⚙</button>
       </div>
     </div>
 
@@ -623,6 +624,10 @@ class Component extends DCLogic {
       resetTimer: (e) => {
         e && e.stopPropagation();
         this.setState((p) => ({ running: false, remaining: this.durOf(p.settings, p.mode) }), () => { this.updateTitle(); this.persistTimer(); });
+      },
+      fullReset: (e) => {
+        e && e.stopPropagation();
+        this.setState((p) => ({ running: false, mode: 'focus', completed: 0, remaining: this.durOf(p.settings, 'focus') }), () => { this.updateTitle(); this.persistTimer(); });
       },
       skipPhase: (e) => {
         e && e.stopPropagation();
